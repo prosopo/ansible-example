@@ -1,0 +1,19 @@
+---
+- name: Install aptitude
+  become: yes
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
+- name: Install required system packages
+  become: yes
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - git
+    state: latest
+    update_cache: true

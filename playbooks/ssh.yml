@@ -1,0 +1,74 @@
+---
+- debug: var="{{ sshuser.ansible_ssh_user_password }}"
+
+- name: Create sshuser
+  user:
+    name: "{{ sshuser.ansible_ssh_user}}"
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+    password: "{{ sshuser.ansible_ssh_user_password | password_hash('sha512') }}"
+
+- name: Add the SSH user to the docker group
+  user:
+    name: "{{ sshuser.ansible_ssh_user }}"
+    groups: docker
+    append: yes
+
+- name: Create SSH directory if it does not exist
+  ansible.builtin.file:
+    path: "/home/{{ sshuser.ansible_ssh_user }}/.ssh"
+    state: directory
+    mode: '0755'
+    owner: "{{ sshuser.ansible_ssh_user }}"
+    group: "{{ sshuser.ansible_ssh_user }}"
+    recurse: yes
+
+- name: Set authorized key taken from file
+  ansible.posix.authorized_key:
+    user: "{{ sshuser.ansible_ssh_user }}"
+    state: present
+    key: "{{ lookup('file', '{{ inventory_dir }}/../accounts/ssh/{{ sshuser.ansible_ssh_public_key_file }}') }}"
+
+- name: Find all sshd configs
+  become: yes
+  ansible.builtin.find:
+    paths: "/etc/ssh/sshd_config.d"
+    file_type: file
+    use_regex: true
+    recurse: yes
+  register: sshd_configs
+
+- name: Remove password authentication=yes if present
+  become: yes
+  lineinfile:
+    path: "{{ item.path }}"
+    # Ignore any commented lines, don't change more than we need to
+    # (?i) case insensitive match, ^(?!#) negative lookahead - line must not start with #
+    regex: "(?i)^(?!#).*PasswordAuthentication.*yes"
+    line: "PasswordAuthentication no"
+    state: present
+  loop: "{{ sshd_configs.files + [{'path': '/etc/ssh/sshd_config'}] }}"
+
+- name: Remove PermitRootLogin=yes if present
+  become: yes
+  lineinfile:
+    path: "{{ item.path }}"
+    # Ignore any commented lines, don't change more than we need to
+    # (?i) case insensitive match, ^(?!#) negative lookahead - line must not start with #
+    regex: "(?i)^(?!#).*PermitRootLogin.*yes"
+    line: "PermitRootLogin no"
+    state: present
+  loop: "{{ sshd_configs.files + [{'path': '/etc/ssh/sshd_config'}] }}"
+
+- name: Restart sshd using supervisorctl
+  community.general.supervisorctl:
+    name: sshd
+    state: restarted
+  when: hostvars[inventory_hostname].environment == "development"
+
+- name: Stop and Start ssh
+  service:
+    name: ssh
+    state: restarted
+  when: hostvars[inventory_hostname].environment != "development"

@@ -1,0 +1,15 @@
+---
+#1st play to install the dependencies, add the SSH key, add the prosopo SSH user, restart SSH.
+- hosts: all
+  gather_facts: false
+  become: true
+  vars:
+    ansible_ssh_user: "{{ ansible_user }}"
+    ansible_ssh_pass: "{{ ansible_ssh_password }}"
+  tasks:
+    - name: Install and configure apt and SSH
+      include_tasks: "{{ item }}"
+      loop:
+        - apt.yml
+        - docker.yml
+        - ssh.yml

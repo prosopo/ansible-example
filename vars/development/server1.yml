@@ -1,0 +1,4 @@
+---
+env_file:
+  MONGO_INITDB_ROOT_USERNAME: "dbUsername"
+  MONGO_INITDB_ROOT_PASSWORD: "dbPassword"

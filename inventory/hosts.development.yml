@@ -1,0 +1,21 @@
+---
+all:
+  hosts:
+    server1:
+      ansible_host: "localhost"
+      ansible_port: "33322"
+      ansible_user: "root"
+      ansible_ssh_password: "root"
+      ansible_sudo_pass: "root"
+      mongo_image_version: "mongo:5.0.4"
+  vars:
+    environment: "development"
+    NODE_ENV: "development"
+    NODE_OPTIONS: "--max-old-space-size=256"
+    sshuser:
+      ansible_python_interpreter: /usr/bin/python3
+      ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+      ansible_ssh_user: sshuser
+      ansible_ssh_user_password: sshuser
+      ansible_ssh_public_key_file: "id_ed25519_example_DO_NOT_USE_IN_PRODUCTION.pub"
+      ansible_ssh_private_key_file: "id_ed25519_example_DO_NOT_USE_IN_PRODUCTION"
